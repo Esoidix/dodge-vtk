@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DODGE VTK - Euro Truck Simulator 2</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .status-ongoing {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+            border: 1px solid #ffa500;
+        }
+        
+        .register-btn {
+            background: #0F9D58;
+            color: #fff;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .register-btn:hover:not(:disabled) {
+            background: #0b7e45;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(15, 157, 88, 0.4);
+        }
+        
+        .register-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #666 !important;
+        }
+        
+        .register-btn i {
+            font-size: 1.2rem;
+        }
+        
+        /* Кнопка просмотра таблицы */
+        .view-sheets {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #0F9D58;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(15, 157, 88, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .view-sheets:hover {
+            transform: scale(1.1);
+            background: #0b7e45;
+        }
+        
+        /* Информация о регистрации */
+        .registration-info {
+            background: rgba(15, 157, 88, 0.1);
+            border: 1px solid #0F9D58;
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .registration-info i {
+            color: #0F9D58;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Верхняя панель -->
+    <div class="header-top">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-truck"></i> DODGE VTK
+            </div>
+            <div class="nav-menu">
+                <a href="admin.html" class="admin-btn"><i class="fas fa-lock"></i> Админ панель</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Главный баннер -->
+    <section class="hero" style="background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1601584115198-04ecc6da9f7c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80'); background-size: cover; background-position: center; height: 500px; display: flex; align-items: center; justify-content: center; text-align: center; border-bottom: 3px solid #ff6b00;">
+        <div style="max-width: 800px; padding: 2rem;">
+            <h1 style="font-family: 'Oswald', sans-serif; font-size: 4rem; color: #fff; text-transform: uppercase; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">DODGE <span style="color: #ff6b00;">VTK</span></h1>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem; color: #e0e0e0;">Легендарная транспортная компания в Euro Truck Simulator 2. Тысячи километров дорог, миллионы тонн грузов и только лучшие водители.</p>
+            <div style="display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <span class="stat-number" id="totalKm" style="font-size: 2.5rem; display: block;">1,245,678</span>
+                    <span style="font-size: 0.9rem; text-transform: uppercase; color: #b0b0b0;">Км пройдено</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="stat-number" id="totalDeliveries" style="font-size: 2.5rem; display: block;">8,452</span>
+                    <span style="font-size: 0.9rem; text-transform: uppercase; color: #b0b0b0;">Доставок</span>
+                </div>
+                <div style="text-align: center;">
+                    <span class="stat-number" id="totalDrivers" style="font-size: 2.5rem; display: block;">24</span>
+                    <span style="font-size: 0.9rem; text-transform: uppercase; color: #b0b0b0;">Водителей</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Основной контент -->
+    <div class="admin-container">
+        <!-- Статистика компании -->
+        <h2 class="section-title" style="font-family: 'Oswald', sans-serif; font-size: 2.5rem; color: #fff; margin: 2rem 0; border-left: 5px solid #ff6b00; padding-left: 1rem;">
+            <i class="fas fa-chart-line" style="color: #ff6b00; margin-right: 10px;"></i> Статистика компании
+        </h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-tachometer-alt"></i>
+                <h3>Общий километраж</h3>
+                <div class="stat-number" id="statKm">1.2M км</div>
+                <div class="stat-detail">За всё время <span id="weeklyKm">↑ +12%</span></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-boxes"></i>
+                <h3>Завершенных доставок</h3>
+                <div class="stat-number" id="statDeliveries">8.4K</div>
+                <div class="stat-detail">В этом месяце <span id="monthlyDeliveries">+342</span></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <h3>Часов в пути</h3>
+                <div class="stat-number" id="statHours">12.4K ч</div>
+                <div class="stat-detail">Среднее за день <span id="avgPerDay">8.2 ч</span></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-coins"></i>
+                <h3>Заработано</h3>
+                <div class="stat-number" id="statMoney">€124.5M</div>
+                <div class="stat-detail">За последний месяц <span id="monthlyEarned">+€8.2M</span></div>
+            </div>
+        </div>
+
+        <!-- Ближайшие конвои -->
+        <h2 class="section-title" style="font-family: 'Oswald', sans-serif; font-size: 2.5rem; color: #fff; margin: 3rem 0 2rem; border-left: 5px solid #ff6b00; padding-left: 1rem;">
+            <i class="fas fa-road" style="color: #ff6b00; margin-right: 10px;"></i> Ближайшие конвои
+        </h2>
+        <div class="actions-grid" id="convoysList">
+            <!-- Загружается через JavaScript -->
+        </div>
+    </div>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>DODGE VTK</h3>
+                <p>Легендарная транспортная компания в Euro Truck Simulator 2. Работаем с 2025 года.</p>
+                <p><i class="fas fa-map-marker-alt"></i> Основана в 2025</p>
+                <p><i class="fas fa-flag"></i> Регион: Европа</p>
+            </div>
+            <div class="footer-section">
+                <h3>Контакты</h3>
+                <p><i class="fab fa-discord"></i> Discord: dodge.vtk</p>
+                <p><i class="fab fa-telegram"></i> Telegram: @dodge_vtk</p>
+                <p><i class="fas fa-envelope"></i> Email: dodge.vtk@ets2.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Социальные сети</h3>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-discord"></i></a>
+                    <a href="#"><i class="fab fa-telegram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="#"><i class="fab fa-twitch"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2026 DODGE VTK. Все права защищены. Euro Truck Simulator 2</p>
+        </div>
+    </footer>
+
+    <!-- Кнопки быстрого доступа -->
+    <a href="admin.html" class="quick-admin">
+        <i class="fas fa-cog"></i>
+    </a>
+    
+    <!-- Кнопка просмотра таблицы со всеми регистрациями -->
+    <a href="https://docs.google.com/spreadsheets/d/10jzLzojoVxPg3ZiUeyCKck4q-dhttwqh7ruNXsLkrqg/edit?usp=sharing" target="_blank" class="view-sheets">
+        <i class="fas fa-table"></i>
+    </a>
+
+    <script>
+        // Конфигурация Google Forms для каждого конвоя
+        // ЗДЕСЬ ТЫ ДОЛЖЕН ЗАМЕНИТЬ ССЫЛКИ НА СВОИ
+        const CONVOY_FORMS = {
+            "Европейское турне": "https://docs.google.com/spreadsheets/d/10jzLzojoVxPg3ZiUeyCKck4q-dhttwqh7ruNXsLkrqg/edit?resourcekey=&gid=614890706#gid=614890706",
+            "Российский экспресс": "https://docs.google.com/spreadsheets/d/10jzLzojoVxPg3ZiUeyCKck4q-dhttwqh7ruNXsLkrqg/edit?resourcekey=&gid=1043169223#gid=1043169223",
+            "Южное побережье": "https://docs.google.com/forms/d/e/FORM_ID_3/viewform",
+            "Ночной рейс": "https://docs.google.com/forms/d/e/FORM_ID_4/viewform",
+            "Восточный экспресс": "https://docs.google.com/forms/d/e/FORM_ID_5/viewform"
+        };
+        
+        // ID твоей Google Таблицы (ЗАМЕНИ НА СВОЙ)
+        const SPREADSHEET_ID = '10jzLzojoVxPg3ZiUeyCKck4q-dhttwqh7ruNXsLkrqg'; // Например: '1AbCdEfGhIjKlMnOpQrStUvWxYz'
+        
+        // Загрузка данных из localStorage
+        function loadCompanyData() {
+            const companyData = JSON.parse(localStorage.getItem('ets2CompanyData'));
+            if (companyData) {
+                document.getElementById('totalKm').textContent = companyData.totalKm || '1,245,678';
+                document.getElementById('totalDeliveries').textContent = companyData.totalDeliveries || '8,452';
+                document.getElementById('totalDrivers').textContent = companyData.totalDrivers || '24';
+                
+                document.getElementById('statKm').textContent = (companyData.totalKm || '1.2M') + ' км';
+                document.getElementById('statDeliveries').textContent = companyData.totalDeliveries || '8.4K';
+                document.getElementById('statHours').textContent = (companyData.totalHours || '12.4K') + ' ч';
+                document.getElementById('statMoney').textContent = '€' + (companyData.totalMoney || '124.5M');
+                
+                document.getElementById('weeklyKm').textContent = companyData.weeklyKm || '↑ +12%';
+                document.getElementById('monthlyDeliveries').textContent = companyData.monthlyDeliveries || '+342';
+                document.getElementById('avgPerDay').textContent = companyData.avgPerDay || '8.2 ч';
+                document.getElementById('monthlyEarned').textContent = companyData.monthlyEarned || '+€8.2M';
+            }
+        }
+
+        // Функция для открытия формы регистрации конкретного конвоя
+        function openConvoyForm(convoyName) {
+            const formUrl = CONVOY_FORMS[convoyName];
+            if (formUrl) {
+                // Открываем в новом окне
+                window.open(formUrl, '_blank', 'width=800,height=600');
+                
+                // Показываем уведомление (можно добавить)
+                alert(`Форма регистрации для конвоя "${convoyName}" открылась в новом окне. После заполнения данные автоматически сохранятся в Google Таблицу.`);
+            } else {
+                alert('Форма для этого конвоя временно недоступна');
+            }
+        }
+
+        // Функция для обновления количества участников в конвое
+        function updateParticipantsCount(convoyName) {
+            // В реальном проекте здесь можно сделать запрос к Google Sheets API
+            // Пока просто имитируем увеличение счетчика
+            const convoys = JSON.parse(localStorage.getItem('ets2Convoys')) || [];
+            const convoyIndex = convoys.findIndex(c => c.name === convoyName);
+            
+            if (convoyIndex !== -1 && convoys[convoyIndex].status === 'open') {
+                convoys[convoyIndex].participants = (convoys[convoyIndex].participants || 0) + 1;
+                localStorage.setItem('ets2Convoys', JSON.stringify(convoys));
+            }
+        }
+
+        // Загрузка конвоев на главную страницу
+        function loadConvoysToMain() {
+            const convoysList = document.getElementById('convoysList');
+            const saved = localStorage.getItem('ets2Convoys');
+            let convoys = [];
+            
+            if (saved) {
+                convoys = JSON.parse(saved);
+            } else {
+                // Конвои по умолчанию
+                convoys = [
+                    {
+                        id: 1,
+                        name: "Европейское турне",
+                        date: "2026-03-25",
+                        time: "20:00",
+                        from: "Париж",
+                        to: "Берлин",
+                        participants: 8,
+                        max: 15,
+                        status: "open",
+                        dlc: "Все"
+                    },
+                    {
+                        id: 2,
+                        name: "Скандинавский экспресс",
+                        date: "2026-03-27",
+                        time: "22:00",
+                        from: "Стокгольм",
+                        to: "Осло",
+                        participants: 12,
+                        max: 15,
+                        status: "soon",
+                        dlc: "Scandinavia"
+                    },
+                    {
+                        id: 3,
+                        name: "Южное побережье",
+                        date: "2026-03-20",
+                        time: "19:00",
+                        from: "Мадрид",
+                        to: "Рим",
+                        participants: 14,
+                        max: 15,
+                        status: "completed",
+                        dlc: "Франция"
+                    }
+                ];
+            }
+            
+            let html = '';
+            
+            if (convoys.length === 0) {
+                html = '<div class="action-card" style="text-align: center; grid-column: 1/-1;">Нет активных конвоев</div>';
+            } else {
+                convoys.forEach(convoy => {
+                    let statusClass = '';
+                    let statusText = '';
+                    let buttonDisabled = false;
+                    let buttonText = '';
+                    let buttonIcon = '';
+                    let registrationInfo = '';
+                    
+                    switch(convoy.status) {
+                        case 'open':
+                            statusClass = 'status-open';
+                            statusText = 'Набор открыт';
+                            buttonDisabled = false;
+                            buttonText = 'Записаться на конвой';
+                            buttonIcon = 'fas fa-pen';
+                            registrationInfo = `
+                                <div class="registration-info">
+                                    <i class="fas fa-info-circle"></i> 
+                                    После записи данные сохранятся в Google Таблицу
+                                </div>
+                            `;
+                            break;
+                        case 'soon':
+                            statusClass = 'status-soon';
+                            statusText = 'Скоро';
+                            buttonDisabled = true;
+                            buttonText = 'Набор скоро откроется';
+                            buttonIcon = 'fas fa-clock';
+                            break;
+                        case 'ongoing':
+                            statusClass = 'status-ongoing';
+                            statusText = 'В пути';
+                            buttonDisabled = true;
+                            buttonText = 'Конвой уже в пути';
+                            buttonIcon = 'fas fa-road';
+                            break;
+                        case 'completed':
+                            statusClass = 'status-completed';
+                            statusText = 'Завершен';
+                            buttonDisabled = true;
+                            buttonText = 'Конвой завершен';
+                            buttonIcon = 'fas fa-check';
+                            break;
+                    }
+
+                    html += `
+                        <div class="action-card" style="cursor: default;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="color: #fff; font-size: 1.4rem;">${convoy.name}</h3>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="convoy-stats">
+                                <span><i class="fas fa-calendar"></i> ${convoy.date}</span>
+                                <span><i class="fas fa-clock"></i> ${convoy.time} МСК</span>
+                            </div>
+                            <div class="convoy-stats">
+                                <span><i class="fas fa-map-marker-alt"></i> ${convoy.from}</span>
+                                <span><i class="fas fa-arrow-right"></i> ${convoy.to}</span>
+                            </div>
+                            <div class="convoy-stats">
+                                <span><i class="fas fa-users"></i> Участников: ${convoy.participants || 0}/${convoy.max}</span>
+                                <span><i class="fas fa-truck"></i> DLC: ${convoy.dlc || 'Все'}</span>
+                            </div>
+                            ${registrationInfo}
+                            <button class="register-btn" onclick="openConvoyForm('${convoy.name}')" ${buttonDisabled ? 'disabled' : ''}>
+                                <i class="${buttonIcon}"></i> ${buttonText}
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+            
+            convoysList.innerHTML = html;
+            
+            // Обновляем ссылку на таблицу
+            const sheetsButton = document.querySelector('.view-sheets');
+            if (sheetsButton) {
+                sheetsButton.href = `https://docs.google.com/spreadsheets/d/10jzLzojoVxPg3ZiUeyCKck4q-dhttwqh7ruNXsLkrqg/edit?usp=sharing`;
+            }
+        }
+
+        // Функция для обновления всех данных
+        function refreshData() {
+            loadCompanyData();
+            loadConvoysToMain();
+        }
+
+        // Инициализация
+        refreshData();
+
+        // Слушаем изменения в localStorage
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'ets2Convoys' || e.key === 'ets2CompanyData') {
+                refreshData();
+            }
+        });
+
+        // Обновляем каждые 10 секунд
+        setInterval(refreshData, 10000);
+    </script>
+</body>
+</html>

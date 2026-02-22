@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление конвоями - DODGE VTK</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-header">
+        <div class="admin-logo">
+            <i class="fas fa-truck"></i> DODGE VTK
+        </div>
+        <div class="admin-user">
+            <span><i class="fas fa-user"></i> <span id="userName"></span></span>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <div class="page-header">
+            <h1><i class="fas fa-road"></i> Управление конвоями</h1>
+            <button class="btn-create" onclick="showCreateModal()">
+                <i class="fas fa-plus"></i> Создать конвой
+            </button>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Дата</th>
+                    <th>Время</th>
+                    <th>Маршрут</th>
+                    <th>Участники</th>
+                    <th>Статус</th>
+                    <th>DLC</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="convoysList">
+                <!-- Загружается через JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="back-link">
+            <a href="admin-panel.html"><i class="fas fa-arrow-left"></i> Вернуться в панель управления</a>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания/редактирования конвоя -->
+    <div class="modal" id="convoyModal">
+        <div class="modal-content">
+            <h2 id="modalTitle"><i class="fas fa-plus"></i> Создать конвой</h2>
+            
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Название конвоя</label>
+                <input type="text" id="convoyName" class="form-control" placeholder="Например: Европейское турне">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calendar"></i> Дата</label>
+                <input type="date" id="convoyDate" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-clock"></i> Время (МСК)</label>
+                <input type="time" id="convoyTime" class="form-control" value="20:00">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> Откуда</label>
+                <input type="text" id="convoyFrom" class="form-control" placeholder="Например: Париж">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> Куда</label>
+                <input type="text" id="convoyTo" class="form-control" placeholder="Например: Берлин">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-users"></i> Максимум участников</label>
+                <input type="number" id="convoyMax" class="form-control" value="15" min="1" max="50">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-gamepad"></i> Требуемый DLC</label>
+                <input type="text" id="convoyDlc" class="form-control" value="Все" placeholder="Например: Scandinavia, Франция">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-info-circle"></i> Статус</label>
+                <select id="convoyStatus" class="form-control">
+                    <option value="open">Набор открыт</option>
+                    <option value="soon">Скоро</option>
+                    <option value="ongoing">В пути (конвой идёт)</option>
+                    <option value="completed">Завершен</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-save" onclick="saveConvoy()">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                <button class="btn-cancel" onclick="hideModal()">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationMessage">Конвой успешно создан</span>
+    </div>
+
+    <script>
+        // Проверка авторизации
+        const currentUser = JSON.parse(sessionStorage.getItem('ets2CurrentUser'));
+        
+        if (!currentUser) {
+            window.location.href = 'admin.html';
+        }
+
+        document.getElementById('userName').textContent = currentUser.name;
+
+        // Загрузка конвоев
+        let convoys = [];
+
+        function loadConvoys() {
+            const saved = localStorage.getItem('ets2Convoys');
+            if (saved) {
+                convoys = JSON.parse(saved);
+                console.log('Загружены конвои:', convoys);
+            } else {
+                // Конвои по умолчанию
+                convoys = [
+                    {
+                        id: 1,
+                        name: "Европейское турне",
+                        date: "2026-03-25",
+                        time: "20:00",
+                        from: "Париж",
+                        to: "Берлин",
+                        participants: 8,
+                        max: 15,
+                        status: "open",
+                        dlc: "Все"
+                    },
+                    {
+                        id: 2,
+                        name: "Скандинавский экспресс",
+                        date: "2026-03-27",
+                        time: "22:00",
+                        from: "Стокгольм",
+                        to: "Осло",
+                        participants: 12,
+                        max: 15,
+                        status: "soon",
+                        dlc: "Scandinavia"
+                    },
+                    {
+                        id: 3,
+                        name: "Южное побережье",
+                        date: "2026-03-20",
+                        time: "19:00",
+                        from: "Мадрид",
+                        to: "Рим",
+                        participants: 14,
+                        max: 15,
+                        status: "completed",
+                        dlc: "Франция"
+                    }
+                ];
+                localStorage.setItem('ets2Convoys', JSON.stringify(convoys));
+            }
+            renderConvoys();
+        }
+
+        // Показать уведомление
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageSpan = document.getElementById('notificationMessage');
+            
+            notification.className = 'notification ' + type;
+            messageSpan.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Отображение конвоев
+        function renderConvoys() {
+            const list = document.getElementById('convoysList');
+            let html = '';
+
+            if (convoys.length === 0) {
+                html = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">Нет конвоев. Создайте первый конвой!</td></tr>';
+            } else {
+                convoys.forEach(convoy => {
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(convoy.status) {
+                        case 'open':
+                            statusClass = 'status-open';
+                            statusText = 'Набор открыт';
+                            break;
+                        case 'soon':
+                            statusClass = 'status-soon';
+                            statusText = 'Скоро';
+                            break;
+                        case 'ongoing':
+                            statusClass = 'status-ongoing';
+                            statusText = 'В пути';
+                            break;
+                        case 'completed':
+                            statusClass = 'status-completed';
+                            statusText = 'Завершен';
+                            break;
+                    }
+
+                    html += `
+                        <tr>
+                            <td>#${convoy.id}</td>
+                            <td><strong style="color: #fff;">${convoy.name}</strong></td>
+                            <td>${convoy.date}</td>
+                            <td>${convoy.time}</td>
+                            <td>${convoy.from} → ${convoy.to}</td>
+                            <td>${convoy.participants || 0}/${convoy.max}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>${convoy.dlc || 'Все'}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon edit" onclick="editConvoy(${convoy.id})" title="Редактировать">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon delete" onclick="deleteConvoy(${convoy.id})" title="Удалить">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            list.innerHTML = html;
+        }
+
+        // Показ модального окна для создания
+        let editingId = null;
+
+        function showCreateModal() {
+            editingId = null;
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus"></i> Создать новый конвой';
+            document.getElementById('convoyName').value = '';
+            
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('convoyDate').value = tomorrow.toISOString().split('T')[0];
+            
+            document.getElementById('convoyTime').value = '20:00';
+            document.getElementById('convoyFrom').value = '';
+            document.getElementById('convoyTo').value = '';
+            document.getElementById('convoyMax').value = '15';
+            document.getElementById('convoyDlc').value = 'Все';
+            document.getElementById('convoyStatus').value = 'open';
+            document.getElementById('convoyModal').classList.add('active');
+        }
+
+        // Редактирование конвоя
+        function editConvoy(id) {
+            const convoy = convoys.find(c => c.id === id);
+            if (convoy) {
+                editingId = id;
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Редактировать конвой';
+                document.getElementById('convoyName').value = convoy.name;
+                document.getElementById('convoyDate').value = convoy.date;
+                document.getElementById('convoyTime').value = convoy.time;
+                document.getElementById('convoyFrom').value = convoy.from;
+                document.getElementById('convoyTo').value = convoy.to;
+                document.getElementById('convoyMax').value = convoy.max;
+                document.getElementById('convoyDlc').value = convoy.dlc || 'Все';
+                document.getElementById('convoyStatus').value = convoy.status;
+                document.getElementById('convoyModal').classList.add('active');
+            }
+        }
+
+        // Сохранение конвоя
+        function saveConvoy() {
+            const name = document.getElementById('convoyName').value.trim();
+            const date = document.getElementById('convoyDate').value;
+            const time = document.getElementById('convoyTime').value;
+            const from = document.getElementById('convoyFrom').value.trim();
+            const to = document.getElementById('convoyTo').value.trim();
+            const max = parseInt(document.getElementById('convoyMax').value);
+            const dlc = document.getElementById('convoyDlc').value.trim();
+            const status = document.getElementById('convoyStatus').value;
+
+            if (!name || !date || !time || !from || !to) {
+                showNotification('Заполните все поля!', 'error');
+                return;
+            }
+
+            if (editingId) {
+                // Редактирование
+                const index = convoys.findIndex(c => c.id === editingId);
+                if (index !== -1) {
+                    convoys[index] = {
+                        ...convoys[index],
+                        name: name,
+                        date: date,
+                        time: time,
+                        from: from,
+                        to: to,
+                        max: max,
+                        status: status,
+                        dlc: dlc
+                    };
+                    showNotification('Конвой успешно обновлен!', 'success');
+                }
+            } else {
+                // Создание
+                const newId = convoys.length > 0 ? Math.max(...convoys.map(c => c.id)) + 1 : 1;
+                convoys.push({
+                    id: newId,
+                    name: name,
+                    date: date,
+                    time: time,
+                    from: from,
+                    to: to,
+                    participants: 0,
+                    max: max,
+                    status: status,
+                    dlc: dlc
+                });
+                showNotification('Новый конвой успешно создан!', 'success');
+            }
+
+            // Сохраняем в localStorage
+            localStorage.setItem('ets2Convoys', JSON.stringify(convoys));
+            console.log('Сохранено в localStorage:', convoys);
+            
+            hideModal();
+            renderConvoys();
+        }
+
+        // Удаление конвоя
+        function deleteConvoy(id) {
+            if (confirm('Вы уверены, что хотите удалить этот конвой?')) {
+                convoys = convoys.filter(c => c.id !== id);
+                localStorage.setItem('ets2Convoys', JSON.stringify(convoys));
+                renderConvoys();
+                showNotification('Конвой удален', 'success');
+            }
+        }
+
+        // Скрыть модальное окно
+        function hideModal() {
+            document.getElementById('convoyModal').classList.remove('active');
+        }
+
+        function logout() {
+            sessionStorage.removeItem('ets2CurrentUser');
+            window.location.href = 'admin.html';
+        }
+
+        // Инициализация
+        loadConvoys();
+
+        // Закрытие по клику вне модалки
+        window.onclick = function(event) {
+            const modal = document.getElementById('convoyModal');
+            if (event.target === modal) {
+                hideModal();
+            }
+        }
+    </script>
+</body>
+</html>
+<!-- Добавь после таблицы с конвоями -->
+<div class="stats-grid" style="margin-top: 2rem;">
+    <div class="stat-card">
+        <i class="fas fa-file-alt"></i>
+        <h3>Всего регистраций</h3>
+        <div class="stat-number" id="totalRegistrations">0</div>
+        <div class="stat-detail">Во всех конвоях</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-users"></i>
+        <h3>Среднее на конвой</h3>
+        <div class="stat-number" id="avgRegistrations">0</div>
+        <div class="stat-detail">участников</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-calendar-check"></i>
+        <h3>Активных конвоев</h3>
+        <div class="stat-number" id="activeConvoys">0</div>
+        <div class="stat-detail">с набором</div>
+    </div>
+</div>
+
+<!-- Кнопка для открытия таблицы -->
+<div style="text-align: center; margin: 2rem 0;">
+    <a href="https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit" target="_blank" class="btn-primary" style="text-decoration: none;">
+        <i class="fas fa-table"></i> Открыть Google Таблицу с регистрациями
+    </a>
+</div>

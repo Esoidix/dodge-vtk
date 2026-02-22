@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления - DODGE VTK</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-header">
+        <div class="admin-logo">
+            <i class="fas fa-truck"></i> DODGE VTK
+        </div>
+        <div class="admin-user">
+            <span><i class="fas fa-user"></i> <span id="userName"></span></span>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-container" id="dashboard">
+        <!-- Загружается через JavaScript -->
+    </div>
+
+    <!-- Подтверждение удаления администратора -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Подтверждение удаления</h3>
+            <p id="confirmMessage">Вы уверены, что хотите удалить этого администратора?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn yes" onclick="confirmDelete()">Да, удалить</button>
+                <button class="confirm-btn no" onclick="hideConfirm()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationMessage">Действие выполнено успешно</span>
+    </div>
+
+    <script>
+        // Проверка авторизации
+        const currentUser = JSON.parse(sessionStorage.getItem('ets2CurrentUser'));
+        
+        if (!currentUser) {
+            window.location.href = 'admin.html';
+        }
+
+        document.getElementById('userName').textContent = currentUser.name;
+
+        // Переменные для удаления
+        let deleteUserId = null;
+
+        // Загрузка данных компании
+        function loadCompanyData() {
+            const data = localStorage.getItem('ets2CompanyData');
+            if (data) {
+                return JSON.parse(data);
+            }
+            return {
+                totalKm: "1,245,678",
+                totalDeliveries: "8,452",
+                totalHours: "12,456",
+                totalMoney: "124.5M",
+                totalDrivers: "24",
+                weeklyKm: "+12,450",
+                monthlyDeliveries: "+342",
+                avgPerDay: "8.2",
+                monthlyEarned: "+€8.2M"
+            };
+        }
+
+        // Сохранение данных компании
+        function saveCompanyData(data) {
+            localStorage.setItem('ets2CompanyData', JSON.stringify(data));
+            // Триггерим событие для обновления главной страницы
+            window.dispatchEvent(new Event('storage'));
+        }
+
+        // Показать уведомление
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageSpan = document.getElementById('notificationMessage');
+            
+            notification.className = 'notification ' + type;
+            messageSpan.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Показать подтверждение удаления
+        function showConfirm(message, userId) {
+            deleteUserId = userId;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmOverlay').classList.add('show');
+        }
+
+        // Скрыть подтверждение
+        function hideConfirm() {
+            document.getElementById('confirmOverlay').classList.remove('show');
+            deleteUserId = null;
+        }
+
+        // Подтвердить удаление
+        function confirmDelete() {
+            if (deleteUserId) {
+                deleteAdmin(deleteUserId);
+            }
+            hideConfirm();
+        }
+
+        // Удаление администратора
+        function deleteAdmin(username) {
+            const users = JSON.parse(localStorage.getItem('ets2Users')) || [];
+            const newUsers = users.filter(u => u.username !== username);
+            localStorage.setItem('ets2Users', JSON.stringify(newUsers));
+            
+            renderDashboard();
+            showNotification('Администратор успешно удален', 'success');
+        }
+
+        // Отображение панели
+        function renderDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            const isOwner = currentUser.role === 'owner';
+            const companyData = loadCompanyData();
+            
+            // Загружаем администраторов
+            const users = JSON.parse(localStorage.getItem('ets2Users')) || [];
+            
+            let html = `
+                <div class="welcome-card">
+                    <div class="welcome-text">
+                        <h2><i class="fas fa-hand-peace"></i> Добро пожаловать, ${currentUser.name}!</h2>
+                        <p><i class="fas fa-clock"></i> ${new Date().toLocaleString()}</p>
+                        <p><i class="fas fa-chart-line"></i> Всего администраторов: ${users.length}</p>
+                    </div>
+                    <div class="role-badge">
+                        <i class="fas ${isOwner ? 'fa-crown' : 'fa-user-shield'}"></i>
+                        ${isOwner ? 'Основатель' : 'Администратор'}
+                    </div>
+                </div>
+
+                <h2 style="color: #fff; margin: 2rem 0 1rem;"><i class="fas fa-chart-pie"></i> Статистика компании</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h3>Общий километраж</h3>
+                        <div class="stat-number">${companyData.totalKm} км</div>
+                        <div class="stat-detail">За неделю <span>${companyData.weeklyKm}</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-boxes"></i>
+                        <h3>Доставок</h3>
+                        <div class="stat-number">${companyData.totalDeliveries}</div>
+                        <div class="stat-detail">За месяц <span>${companyData.monthlyDeliveries}</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock"></i>
+                        <h3>Часов в пути</h3>
+                        <div class="stat-number">${companyData.totalHours} ч</div>
+                        <div class="stat-detail">В среднем <span>${companyData.avgPerDay} ч/день</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-coins"></i>
+                        <h3>Заработано</h3>
+                        <div class="stat-number">€${companyData.totalMoney}</div>
+                        <div class="stat-detail">За месяц <span>${companyData.monthlyEarned}</span></div>
+                    </div>
+                </div>
+
+                <h2 style="color: #fff; margin: 2rem 0 1rem;"><i class="fas fa-tools"></i> Инструменты управления</h2>
+                <div class="actions-grid">
+                    <a href="#" class="action-card" onclick="editCompanyStats(); return false;">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Статистика компании</h3>
+                        <p>Изменить общий километраж, количество доставок, доход и другие показатели компании</p>
+                        <div style="margin-top: 1rem; color: #ff6b00; font-size: 0.9rem;">
+                            <i class="fas fa-arrow-right"></i> Нажмите для редактирования
+                        </div>
+                    </a>
+                    
+                    <a href="admin-convoys.html" class="action-card">
+                        <i class="fas fa-road"></i>
+                        <h3>Управление конвоями</h3>
+                        <p>Создавать, редактировать и удалять конвои. Управлять статусами и маршрутами</p>
+                        <div style="margin-top: 1rem; color: #ff6b00; font-size: 0.9rem;">
+                            <i class="fas fa-arrow-right"></i> Перейти к управлению
+                        </div>
+                    </a>
+            `;
+
+            // Кнопка добавления администратора (только для основателя)
+            if (isOwner) {
+                html += `
+                    <a href="admin-add.html" class="action-card owner-only">
+                        <i class="fas fa-user-plus"></i>
+                        <h3>Добавить администратора</h3>
+                        <p>Создать нового администратора с автоматической генерацией логина</p>
+                        <span class="owner-badge">Основатель</span>
+                        <div style="margin-top: 1rem; color: #ff6b00; font-size: 0.9rem;">
+                            <i class="fas fa-arrow-right"></i> Создать администратора
+                        </div>
+                    </a>
+                `;
+            }
+
+            html += `</div>`;
+
+            // Список администраторов
+            html += `
+                <div class="admins-list">
+                    <h3><i class="fas fa-users-cog"></i> Управление администраторами (${users.length})</h3>
+            `;
+
+            users.forEach(user => {
+                html += `
+                    <div class="admin-item">
+                        <div class="admin-info">
+                            <i class="fas ${user.role === 'owner' ? 'fa-crown' : 'fa-user-tie'}"></i>
+                            <div>
+                                <span class="admin-name">${user.name}</span>
+                                <span class="admin-login">(@${user.username})</span>
+                                ${user.addedBy !== 'system' ? `<span style="color: #b0b0b0; font-size: 0.8rem; margin-left: 1rem;">добавлен: ${user.addedBy}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span class="admin-role">${user.role === 'owner' ? 'Основатель' : 'Админ'}</span>
+                            ${isOwner && user.role !== 'owner' ? `
+                                <button class="btn-danger" onclick="showConfirm('Удалить администратора ${user.name}?', '${user.username}')">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+
+            // Форма редактирования статистики
+            html += `
+                <div id="editStatsForm" style="display: none; margin-top: 2rem;">
+                    <div class="welcome-card" style="display: block;">
+                        <h3 style="margin-bottom: 1.5rem; color: #fff;"><i class="fas fa-edit"></i> Редактирование статистики компании</h3>
+                        <div class="form-group">
+                            <label><i class="fas fa-tachometer-alt"></i> Общий километраж (км)</label>
+                            <input type="text" id="editKm" class="form-control" value="${companyData.totalKm}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-boxes"></i> Количество доставок</label>
+                            <input type="text" id="editDeliveries" class="form-control" value="${companyData.totalDeliveries}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Часов в пути</label>
+                            <input type="text" id="editHours" class="form-control" value="${companyData.totalHours}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-coins"></i> Заработано (€)</label>
+                            <input type="text" id="editMoney" class="form-control" value="${companyData.totalMoney}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-users"></i> Количество водителей</label>
+                            <input type="text" id="editDrivers" class="form-control" value="${companyData.totalDrivers}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-chart-line"></i> За неделю (+км)</label>
+                            <input type="text" id="editWeeklyKm" class="form-control" value="${companyData.weeklyKm}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-chart-line"></i> За месяц (+доставок)</label>
+                            <input type="text" id="editMonthlyDeliveries" class="form-control" value="${companyData.monthlyDeliveries}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-chart-line"></i> Среднее за день (ч)</label>
+                            <input type="text" id="editAvgPerDay" class="form-control" value="${companyData.avgPerDay}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-chart-line"></i> За месяц (+€)</label>
+                            <input type="text" id="editMonthlyEarned" class="form-control" value="${companyData.monthlyEarned}">
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn-primary" onclick="saveCompanyStats()">
+                                <i class="fas fa-save"></i> Сохранить изменения
+                            </button>
+                            <button class="btn-secondary" onclick="hideEditForm()">
+                                <i class="fas fa-times"></i> Отмена
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            dashboard.innerHTML = html;
+        }
+
+        // Функции для редактирования статистики
+        window.editCompanyStats = function() {
+            document.getElementById('editStatsForm').style.display = 'block';
+            window.scrollTo({
+                top: document.getElementById('editStatsForm').offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+
+        window.hideEditForm = function() {
+            document.getElementById('editStatsForm').style.display = 'none';
+        }
+
+        window.saveCompanyStats = function() {
+            const newData = {
+                totalKm: document.getElementById('editKm').value,
+                totalDeliveries: document.getElementById('editDeliveries').value,
+                totalHours: document.getElementById('editHours').value,
+                totalMoney: document.getElementById('editMoney').value,
+                totalDrivers: document.getElementById('editDrivers').value,
+                weeklyKm: document.getElementById('editWeeklyKm').value,
+                monthlyDeliveries: document.getElementById('editMonthlyDeliveries').value,
+                avgPerDay: document.getElementById('editAvgPerDay').value,
+                monthlyEarned: document.getElementById('editMonthlyEarned').value
+            };
+            
+            saveCompanyData(newData);
+            
+            hideEditForm();
+            renderDashboard();
+            showNotification('Статистика компании успешно обновлена!', 'success');
+            
+            // Пытаемся обновить главную страницу
+            try {
+                if (window.opener && !window.opener.closed) {
+                    window.opener.location.reload();
+                }
+            } catch(e) {
+                console.log('Не удалось обновить главную страницу');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('ets2CurrentUser');
+            window.location.href = 'admin.html';
+        }
+
+        renderDashboard();
+    </script>
+</body>
+</html>
